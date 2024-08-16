@@ -1,5 +1,5 @@
 "use client";
-import { Feedback, ModelResponse } from "@/app/types/api";
+import { ModelResponse } from "@/app/types/api";
 import { Button } from "./Button";
 import { HandThumbUpIcon } from "@heroicons/react/24/outline";
 import { useFormStore } from "@/app/modules/form/store/form.store";
@@ -14,69 +14,37 @@ import {
 } from "./Dialog";
 import { Label } from "./Label";
 import { ModalInput } from "./ModalInput";
-import { useState, useEffect } from "react";
 import { DialogClose } from "@radix-ui/react-dialog";
+import { SheetViewer } from "react-office-viewer";
+import { useFilePreviewerStore } from "@/app/modules/file-previewer/store";
 
 interface Props {
-  message: ModelResponse | null;
+  message: string | undefined;
   onFeedback: (formData: FormData) => Promise<void>;
 }
 
 export const BlockMessage: React.FC<Props> = ({ message, onFeedback }) => {
-  const [feedback, setFeedback] = useState<Feedback>({
-    unspsc_code: "",
-    unspsc_description: "",
-    new_unspsc_code: "",
-    new_unspsc_description: "",
-  });
   const { pending } = useFormStore();
-
-  useEffect(() => {
-    if (message) {
-      setFeedback({
-        unspsc_code: message.unspsc_code || "",
-        unspsc_description: message.unspsc_description || "",
-        new_unspsc_code: "",
-        new_unspsc_description: "",
-      });
-    }
-  }, [message]);
-
-  const onCodeChange = (newCode: string) => {
-    setFeedback((prev) => ({ ...prev, new_unspsc_code: newCode }));
-  };
-
-  const onDescriptionChange = (newDescription: string) => {
-    setFeedback((prev) => ({
-      ...prev,
-      new_unspsc_description: newDescription,
-    }));
-  };
+  const { fileUrl } = useFilePreviewerStore();
 
   if (!message) {
     return null;
   }
 
   const handleSubmit = async (formData: FormData) => {
-    formData.append("unspsc_code", feedback.unspsc_code || "");
-    formData.append("unspsc_description", feedback.unspsc_description || "");
-    formData.append("new_unspsc_code", feedback.new_unspsc_code);
-    formData.append("new_unspsc_description", feedback.new_unspsc_description);
-
     await onFeedback(formData);
   };
 
   return (
     <section className="max-w-2xl w-full flex flex-col gap-5 mx-auto p-3 rounded-md z-20 bg-[#fafafa] border">
-      <div className="flex flex-col">
-        <p>UNSPSC Code: {feedback.unspsc_code}</p>
-        <p>UNSPSC Description: {feedback.unspsc_description}</p>
-      </div>
+      <div className="flex flex-col">{message}</div>
+      <SheetViewer file={fileUrl} />
       <Dialog>
-        <DialogTrigger className="w-fit">
-          <Button size="sm" type="button" disabled={pending} className="w-fit">
-            <HandThumbUpIcon className="h-4 mr-2" /> Feedback
-          </Button>
+        <DialogTrigger
+          type="button"
+          className="w-fit flex items-center cursor-pointer hover:text-blue-500 transition-colors duration-200 ease-in-out"
+        >
+          <HandThumbUpIcon className="h-4 mr-2" /> Feedback
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
@@ -96,7 +64,7 @@ export const BlockMessage: React.FC<Props> = ({ message, onFeedback }) => {
                   id="unspsc_code"
                   name="unspsc_code"
                   disabled
-                  value={feedback.unspsc_code}
+                  value={""}
                   className="col-span-3"
                 />
               </div>
@@ -111,7 +79,7 @@ export const BlockMessage: React.FC<Props> = ({ message, onFeedback }) => {
                   id="unspsc_description"
                   name="unspsc_description"
                   disabled
-                  value={feedback.unspsc_description}
+                  value={""}
                   className="col-span-3"
                 />
               </div>
@@ -127,10 +95,10 @@ export const BlockMessage: React.FC<Props> = ({ message, onFeedback }) => {
                   id="new_unspsc_code"
                   name="new_unspsc_code"
                   type="text"
-                  onChange={(e) => onCodeChange(e.target.value)}
+                  onChange={(e) => {}}
                   maxLength={9}
                   minLength={8}
-                  value={feedback.new_unspsc_code}
+                  value={""}
                   className="col-span-3"
                 />
               </div>
@@ -144,26 +112,22 @@ export const BlockMessage: React.FC<Props> = ({ message, onFeedback }) => {
                 <ModalInput
                   id="new_unspsc_description"
                   name="new_unspsc_description"
-                  onChange={(e) => onDescriptionChange(e.target.value)}
+                  onChange={(e) => {}}
                   maxLength={100}
                   minLength={1}
-                  value={feedback.new_unspsc_description}
+                  value={""}
                   className="col-span-3"
                 />
               </div>
             </div>
             <DialogFooter>
-              <DialogClose asChild>
-                <Button
-                  type="submit"
-                  form="feedback-form"
-                  disabled={
-                    feedback.new_unspsc_code === "" ||
-                    feedback.new_unspsc_description === ""
-                  }
-                >
-                  Submit Feedback
-                </Button>
+              <DialogClose
+                asChild
+                type="submit"
+                form="feedback-form"
+                disabled={pending}
+              >
+                Submit Feedback
               </DialogClose>
             </DialogFooter>
           </form>

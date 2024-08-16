@@ -1,13 +1,13 @@
 "use client";
-import { useModelStore } from "@/app/modules/model/store/model.store";
 import { BlockMessage } from "./BlockMessage";
+import { useFormStore } from "@/app/modules/form/store/form.store";
 
 interface Props {
   onFeedback: (formData: FormData) => Promise<void>;
 }
 
 export const ResponseContainer: React.FC<Props> = ({ onFeedback }) => {
-  const { modelResponse } = useModelStore();
+  const { formMessage } = useFormStore();
 
-  return <BlockMessage message={modelResponse} onFeedback={onFeedback} />;
+  return <BlockMessage message={formMessage} onFeedback={onFeedback} />;
 };

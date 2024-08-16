@@ -21,6 +21,8 @@
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",
+    "react-office-previewer": "^1.0.16",
+    "react-office-viewer": "^1.0.4",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
     "zustand": "^4.5.4"

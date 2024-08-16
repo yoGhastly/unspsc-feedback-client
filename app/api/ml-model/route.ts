@@ -1,38 +1,47 @@
-import { ModelResponse } from "@/app/types/api";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const data: { user_description: string } = await req.json();
   try {
-    if (data.user_description === undefined) {
+    const formData = await req.formData();
+    const file = formData.get("file");
+
+    // Check if 'file' is present and of type File
+    if (!file || !(file instanceof File)) {
+      console.error("No file found or the file is not a valid File object");
       return NextResponse.json(
-        { message: "POST /api/ml-model" },
+        { submitted: false, error: "No valid file found" },
         { status: 400 },
       );
     }
 
-    const { user_description } = data;
+    const uploadData = new FormData();
+    uploadData.append("file", file);
 
     const res = await fetch("http://127.0.0.1:5000/predict", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ user_description }),
+      body: uploadData, // Send the FormData directly
     });
 
     if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Failed to submit file to ML model", res.status, errorText);
       return NextResponse.json(
-        { message: "POST /api/ml-model Response from ML model failed" },
-        { status: 500 },
+        { submitted: false, error: errorText },
+        { status: res.status },
       );
     }
 
-    const { unspsc_code, unspsc_description }: ModelResponse = await res.json();
+    // Handle file download
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    return NextResponse.json({ submitted: true, url });
+  } catch (error) {
+    console.error("Error while submitting file to Flask server:", error);
     return NextResponse.json(
-      { unspsc_code, unspsc_description },
-      { status: 200 },
+      // @ts-ignore
+      { submitted: false, error: error.message },
+      { status: 500 },
     );
-  } catch (error) { }
-  return NextResponse.json({ message: "POST /api/ml-model" }, { status: 200 });
+  }
 }

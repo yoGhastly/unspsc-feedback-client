@@ -18,8 +18,8 @@ export default function Home() {
         )}
       />
       <header className="w-full max-w-5xl flex flex-col gap-5 justify-center items-center z-10">
-        <h1 className="text-4xl font-bold tracking-tight">AI + ML Feedback</h1>
-        <Form action={submit as any} />
+        <h1 className="text-4xl font-bold tracking-tight">ML Feedback</h1>
+        <Form action={submit} />
       </header>
       <ResponseContainer onFeedback={sendFeedback} />
     </main>
