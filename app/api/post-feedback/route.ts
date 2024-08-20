@@ -1,10 +1,19 @@
-import { FeedbackResponse } from "@/app/types/api";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  const { feedback }: FeedbackResponse = await request.json();
+  const { feedback }: { feedback: any[] } = await request.json();
+
+  if (!feedback || feedback.length === 0) {
+    return NextResponse.json(
+      { message: "No feedback data found" },
+      { status: 400 },
+    );
+  }
+
+  console.log("Feedback data:", feedback);
+
   try {
-    const response = await fetch("http://localhost:5000/feedback", {
+    const response = await fetch("http://localhost:5000/save-feedback", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

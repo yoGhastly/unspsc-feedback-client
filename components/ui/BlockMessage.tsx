@@ -1,8 +1,5 @@
 "use client";
-import { ModelResponse } from "@/app/types/api";
-import { Button } from "./Button";
 import { HandThumbUpIcon } from "@heroicons/react/24/outline";
-import { useFormStore } from "@/app/modules/form/store/form.store";
 import {
   Dialog,
   DialogContent,
@@ -12,125 +9,137 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./Dialog";
-import { Label } from "./Label";
-import { ModalInput } from "./ModalInput";
 import { DialogClose } from "@radix-ui/react-dialog";
-import { SheetViewer } from "react-office-viewer";
+import Spreadsheet from "react-spreadsheet";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useFilePreviewerStore } from "@/app/modules/file-previewer/store";
+import { cn } from "@/lib/utils";
+import { Button } from "./Button";
+import { useToast } from "./use-toast";
 
 interface Props {
   message: string | undefined;
-  onFeedback: (formData: FormData) => Promise<void>;
+  data: any[];
+  onFeedback: (data: any[]) => Promise<Response | undefined>;
 }
 
-export const BlockMessage: React.FC<Props> = ({ message, onFeedback }) => {
-  const { pending } = useFormStore();
-  const { fileUrl } = useFilePreviewerStore();
+export const BlockMessage: React.FC<Props> = ({
+  message,
+  data,
+  onFeedback,
+}) => {
+  const { data: currentData } = useFilePreviewerStore();
+  const { toast } = useToast();
+
+  const [hasDataChanged, setHasDataChanged] = useState(false);
+  const [editedRows, setEditedRows] = useState<any[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const prevDataRef = useRef(data);
+
+  const handleSubmit = async (_formData: FormData) => {
+    setSubmitting(true);
+    await onFeedback(editedRows);
+
+    setHasDataChanged(false);
+    setSubmitting(false);
+  };
+
+  useEffect(() => {
+    if (JSON.stringify(currentData) === JSON.stringify(prevDataRef.current)) {
+      setHasDataChanged(false);
+    } else {
+      setHasDataChanged(true);
+    }
+  }, [currentData]);
+
+  useEffect(() => {
+    prevDataRef.current = data;
+  }, [data]);
+
+  const handleDataChange = (newData: any[]) => {
+    const editedRows = newData.filter(
+      (row, index) => JSON.stringify(row) !== JSON.stringify(data[index]),
+    );
+
+    setEditedRows(editedRows);
+  };
+
+  console.log("editedRows", editedRows);
 
   if (!message) {
     return null;
   }
 
-  const handleSubmit = async (formData: FormData) => {
-    await onFeedback(formData);
-  };
-
   return (
-    <section className="max-w-2xl w-full flex flex-col gap-5 mx-auto p-3 rounded-md z-20 bg-[#fafafa] border">
+    <section className="max-w-5xl w-full flex flex-col gap-5 mx-auto p-3 rounded-md z-20 bg-[#fafafa] border">
       <div className="flex flex-col">{message}</div>
-      <SheetViewer file={fileUrl} />
+      <div className="overflow-x-auto">
+        <div className="min-w-[850px] h-96">
+          <Suspense fallback={<p>loading...</p>}>
+            <Spreadsheet
+              data={data}
+              onChange={handleDataChange}
+              className="w-full"
+              columnLabels={[
+                "Original Input",
+                "UNSPSC Code",
+                "UNSPSC Description",
+                "Category Code",
+                "Category Description",
+              ]}
+            />
+          </Suspense>
+        </div>
+      </div>
+
       <Dialog>
         <DialogTrigger
           type="button"
-          className="w-fit flex items-center cursor-pointer hover:text-blue-500 transition-colors duration-200 ease-in-out"
+          disabled={!hasDataChanged}
+          className={cn(
+            "w-fit flex items-center",
+            { "text-gray-500 cursor-not-allowed": !hasDataChanged },
+            { "text-blue-500 cursor-pointer": hasDataChanged },
+            "transition-colors duration-300 ease-in-out",
+          )}
         >
-          <HandThumbUpIcon className="h-4 mr-2" /> Feedback
+          <HandThumbUpIcon className="h-4 mr-2" />{" "}
+          {hasDataChanged ? "Feedback" : "No Changes Made"}
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Help Us Improve Our Predictions</DialogTitle>
+            <DialogTitle>
+              You have made changes to the generated predictions.
+            </DialogTitle>
             <DialogDescription>
-              Let us know how we can improve this prediction by providing your
-              feedback.
+              Let us know how we can improve predictions by providing your
+              feedback.{" "}
+              <span className="font-bold">
+                This will go through a review process before being implemented.
+              </span>
             </DialogDescription>
           </DialogHeader>
-          <form action={handleSubmit} id="feedback-form">
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="unspsc_code" className="text-right text-black">
-                  Code
-                </Label>
-                <ModalInput
-                  id="unspsc_code"
-                  name="unspsc_code"
-                  disabled
-                  value={""}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label
-                  htmlFor="unspsc_description"
-                  className="text-right text-black"
-                >
-                  Description
-                </Label>
-                <ModalInput
-                  id="unspsc_description"
-                  name="unspsc_description"
-                  disabled
-                  value={""}
-                  className="col-span-3"
-                />
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label
-                  htmlFor="new_unspsc_code"
-                  className="text-right text-black"
-                >
-                  New Code
-                </Label>
-                <ModalInput
-                  id="new_unspsc_code"
-                  name="new_unspsc_code"
-                  type="text"
-                  onChange={(e) => {}}
-                  maxLength={9}
-                  minLength={8}
-                  value={""}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label
-                  htmlFor="new_unspsc_description"
-                  className="text-right text-black"
-                >
-                  New Description
-                </Label>
-                <ModalInput
-                  id="new_unspsc_description"
-                  name="new_unspsc_description"
-                  onChange={(e) => {}}
-                  maxLength={100}
-                  minLength={1}
-                  value={""}
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose
-                asChild
-                type="submit"
-                form="feedback-form"
-                disabled={pending}
-              >
-                Submit Feedback
-              </DialogClose>
-            </DialogFooter>
-          </form>
+          <DialogFooter>
+            <form action={handleSubmit} id="feedback-form">
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button
+                    disabled={submitting}
+                    type="submit"
+                    onClick={() =>
+                      toast({
+                        title: "Feedback submitted",
+                        description:
+                          "Your feedback has been submitted successfully.",
+                      })
+                    }
+                  >
+                    {submitting ? "Submitting..." : "Submit Feedback"}
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
+            </form>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </section>

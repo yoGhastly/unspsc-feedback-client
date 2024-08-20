@@ -5,7 +5,6 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const file = formData.get("file");
 
-    // Check if 'file' is present and of type File
     if (!file || !(file instanceof File)) {
       console.error("No file found or the file is not a valid File object");
       return NextResponse.json(
@@ -19,8 +18,10 @@ export async function POST(req: Request) {
 
     const res = await fetch("http://127.0.0.1:5000/predict", {
       method: "POST",
-      body: uploadData, // Send the FormData directly
+      body: uploadData,
     });
+
+    const predictions = await res.json();
 
     if (!res.ok) {
       const errorText = await res.text();
@@ -31,11 +32,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Handle file download
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-
-    return NextResponse.json({ submitted: true, url });
+    return NextResponse.json({ submitted: true, predictions });
   } catch (error) {
     console.error("Error while submitting file to Flask server:", error);
     return NextResponse.json(

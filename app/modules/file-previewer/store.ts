@@ -1,11 +1,11 @@
 import { create } from "zustand";
 
 interface FilePreviewerStore {
-  fileUrl: string;
-  setFileUrl: (fileUrl: string) => void;
+  data: any[];
+  setData: (data: any[]) => void;
 }
 
 export const useFilePreviewerStore = create<FilePreviewerStore>((set) => ({
-  fileUrl: "",
-  setFileUrl: (fileUrl) => set({ fileUrl }),
+  data: [],
+  setData: (data) => set({ data }),
 }));
